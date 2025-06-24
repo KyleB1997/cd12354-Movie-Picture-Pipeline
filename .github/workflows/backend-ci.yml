@@ -1,0 +1,16 @@
+name: Backend Continuous Integration
+
+on:
+  pull_request:
+    branches:
+     - main
+    paths:
+     - 'starter/backend/**'
+  workflow_dispatch:
+
+#below is to set backend directory variable to avoid listing the same throughout every job
+defaults:
+  run:
+    shell: bash
+    env:
+      wd: starter/backend
