@@ -1,0 +1,83 @@
+name: Backend Continuous Integration
+
+on:
+  push:
+    branches:
+     - main
+    paths:
+     - 'starter/backend/**'
+  workflow_dispatch:
+
+#below is to set backend directory variable to avoid listing the same throughout every job
+env:
+  wd: starter/backend
+
+#Start of the ci jobs. Lint, Test & Build
+jobs:
+  lint:
+    name: Lint Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup python env
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Pipenv
+        run: pip install pipenv
+
+      - name: Install all dependencies #This will install all dependencies. Incl. flask, flake8 pytest etc
+        run: cd $wd && pipenv install --dev
+
+      - name: Run lint
+        run: cd $wd && pipenv run lint
+  
+  test:
+    name: Test Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Pipenv
+        run: pip install pipenv
+        
+      - name: Install all dependencies #This will install all dependencies. Incl. flask, flake8 pytest etc
+        run: cd $wd && pipenv install --dev
+
+      - name: Run Test 
+        run: cd $wd && pipenv run test
+  
+  build:
+    name: Build Job
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Build Docker Image
+        run: |
+          cd $wd
+          docker build -t mp-backend:latest .
+      
+      #below stops and removes docker container after run. 
+      - name: Stop and remove Docker container
+        if: always()
+        run: docker rm -f mp-backend || true
