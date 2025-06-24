@@ -112,7 +112,7 @@ jobs:
       
       - name: Set image tag in Kustomize
         run: |
-          cd starter/frontend
+          cd starter/frontend/k8s
           IMAGE_TAG=latest
           kustomize edit set image mp-frontend=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
