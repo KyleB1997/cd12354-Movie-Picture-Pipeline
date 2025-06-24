@@ -9,12 +9,9 @@ on:
   workflow_dispatch:
 
 #below is to set frontend directory variable to avoid listing the same throughout every job
-defaults:
-  run:
-    shell: bash
-    env:
-      wd: starter/frontend
-      REACT_APP_MOVIE_API_URL: http://localhost:5000 #Backend URL
+env:
+  wd: starter/frontend
+  REACT_APP_MOVIE_API_URL: http://localhost:5000 #Backend URL
 
 #Start of the ci jobs. Lint, Test & Build
 jobs:
