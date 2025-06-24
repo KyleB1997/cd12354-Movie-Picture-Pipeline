@@ -27,6 +27,9 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install Pipenv
+        run: pip install pipenv
+
       - name: Install all dependencies #This will install all dependencies. Incl. flask, flake8 pytest etc
         run: cd $wd && pipenv install --dev
 
@@ -46,6 +49,9 @@ jobs:
         with:
           python-version: '3.10'
       
+      - name: Install Pipenv
+        run: pip install pipenv
+        
       - name: Install all dependencies #This will install all dependencies. Incl. flask, flake8 pytest etc
         run: cd $wd && pipenv install --dev
 
