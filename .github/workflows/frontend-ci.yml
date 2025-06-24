@@ -1,0 +1,119 @@
+name: Frontend Continuous Integration
+
+on:
+  pull_request:
+    branches:
+     - main
+    paths:
+     - 'starter/frontend/**'
+  workflow_dispatch:
+
+#below is to set frontend directory variable to avoid listing the same throughout every job
+defaults:
+  run:
+    shell: bash
+    env:
+      wd: starter/frontend
+      REACT_APP_MOVIE_API_URL: http://localhost:5000 #Backend URL
+
+#Start of the ci jobs. Lint, Test & Build
+jobs:
+  lint:
+    name: Lint Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Restore Cache # Restore cache before dependency install
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('starter/frontend/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+
+      - name: Install dependencies Lint
+        run: cd $wd && npm ci
+
+      - name: Run lint
+        run: cd $wd && npm run lint
+  
+  test:
+    name: Test Job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Restore Cache # Restore cache before dependency install
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('starter/frontend/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: cd $wd && npm ci
+
+      - name: Run Test
+        run: cd $wd && npm run test
+  
+  build:
+    name: Build Job
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Restore Cache # Restore cache before dependency install
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('starter/frontend/package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
+      
+      - name: Install dependencies
+        run: cd $wd && npm ci
+      
+      - name: Build Docker Image
+        run: |
+          cd $wd
+          docker build \
+            --build-arg=REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL \
+            --tag=mp-frontend:latest .  
+      
+      - name: Run Docker # This is for validation
+        run: docker run --name mp-frontend -p 3000:3000 -d mp-frontend
+
+      - name: Stop and remove Docker container
+        if: always()
+        run: docker rm -f mp-frontend || true
+      
+
+
+
+        
+
+      
