@@ -11,6 +11,7 @@ on:
 #below is to set backend directory variable to avoid listing the same throughout every job
 env:
   wd: starter/backend
+  REACT_APP_MOVIE_API_URL: http://localhost:5000 #Backend URL
 
 #Start of the ci jobs. Lint, Test & Build
 jobs:
@@ -72,12 +73,40 @@ jobs:
         with:
           python-version: '3.10'
       
-      - name: Build Docker Image
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.BACKEND_ECR_REPO }}
         run: |
           cd $wd
-          docker build -t mp-backend:latest .
+          IMAGE_TAG=latest
+
+          docker build \
+            --build-arg REACT_APP_MOVIE_API_URL=$REACT_APP_MOVIE_API_URL \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG  .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
       
-      #below stops and removes docker container after run. 
-      - name: Stop and remove Docker container
-        if: always()
-        run: docker rm -f mp-backend || true
+      - name: Set image tag in Kustomize
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: ${{ secrets.BACKEND_ECR_REPO }}
+        run: |
+          cd starter/backend/k8s
+          IMAGE_TAG=latest
+          kustomize edit set image backend=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy Docker Image with Kustomize
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.EKS_CLUSTER_NAME }}
+          kubectl apply -k starter/backend/k8s
