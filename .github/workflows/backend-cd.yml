@@ -11,7 +11,7 @@ on:
 #below is to set backend directory variable to avoid listing the same throughout every job
 env:
   wd: starter/backend
-  REACT_APP_MOVIE_API_URL: http://localhost:5000 #Backend URL
+  REACT_APP_MOVIE_API_URL: http://a2ced92a4da99466ba33eec2f919604c-425361476.us-east-1.elb.amazonaws.com # http://localhost:5000 #Backend URL
 
 #Start of the ci jobs. Lint, Test & Build
 jobs:
